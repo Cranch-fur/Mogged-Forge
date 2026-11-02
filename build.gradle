@@ -1,0 +1,119 @@
+plugins {
+	id 'java'
+	id 'idea'
+	id 'eclipse'
+	id 'net.minecraftforge.gradle' version '[7.0.29,8.0)'
+	// Only 1.20.1 (and older) runs obfuscated: there the jar is renamed to SRG names, mixins included
+	id 'net.minecraftforge.renamer' version '1.0.14' apply false
+}
+
+// Target Minecraft version: ./gradlew build -Pmc=1.21.1 (default comes from gradle.properties)
+def mcTarget = providers.gradleProperty("mc").getOrElse(project.default_mc)
+def mcFile = file("versions/${mcTarget}.properties")
+if (!mcFile.exists()) {
+	def supported = file("versions").list().findAll { it.endsWith(".properties") }.collect { it - ".properties" }.sort()
+	throw new GradleException("Unsupported Minecraft version '${mcTarget}'. Supported: ${supported.join(', ')} (use -Pmc=<version>)")
+}
+def mc = new Properties()
+mcFile.withInputStream { mc.load(it) }
+
+// Versions with the same APIs share a "family" of version-specific sources in src/<family>/
+def family = mc.family
+def obfuscated = mc.obfuscated.toBoolean()
+def javaVersion = mc.java_version.toInteger()
+
+version = "${project.mod_version}+mc${mcTarget}-forge"
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(javaVersion)
+
+// One source set: shared code, shared client code and the family's own code (platform layer, mixins, Forge glue)
+sourceSets {
+	main {
+		java.srcDirs = ['src/main/java', 'src/client/java', "src/${family}/java"]
+		resources.srcDirs = ['src/main/resources', "src/${family}/resources"]
+	}
+}
+
+minecraft {
+	// 26.1+ is unobfuscated and needs no mappings; older versions use Mojang's
+	if (mc.mappings.toBoolean()) {
+		mappings channel: 'official', version: mc.minecraft_version
+	}
+	runs {
+		configureEach {
+			workingDir.convention layout.projectDirectory.dir('run')
+			// Mixin needs the config on the command line in development (the jar's manifest has it in production)
+			args '--mixin.config=mogged.client.mixins.json'
+		}
+		register('client')
+		register('server') {
+			args '--nogui'
+		}
+	}
+}
+
+repositories {
+	minecraft.mavenizer(it)
+	maven fg.forgeMaven
+	maven fg.minecraftLibsMaven
+	mavenCentral()
+}
+
+dependencies {
+	implementation minecraft.dependency("net.minecraftforge:forge:${mc.minecraft_version}-${mc.forge_version}")
+	annotationProcessor "org.spongepowered:mixin:${project.mixin_version}:processor"
+}
+
+if (obfuscated) {
+	apply plugin: 'net.minecraftforge.renamer'
+	renamer.enableMixinRefmaps {
+		config 'mogged.client.mixins.json'
+	}
+	// The plain jar keeps Mojang names for development; the release jar is renamed to the SRG names Forge 47 runs with
+	tasks.named('jar', Jar) {
+		archiveClassifier = 'dev'
+	}
+	renamer.classes(tasks.named('jar', Jar)) {
+		archiveClassifier = ''
+		mappings renamer.mixin.generatedMappings
+	}
+	renamer.mappings(minecraft.dependency.toSrg)
+}
+
+def resourceProps = [
+	mod_version            : project.mod_version,
+	minecraft_version      : mc.minecraft_version,
+	minecraft_version_range: mc.minecraft_version_range,
+	loader_version_range   : mc.loader_version_range,
+	forge_version_range    : mc.forge_version_range,
+	mixin_compat           : mc.mixin_compat
+]
+
+tasks.named('processResources', ProcessResources) {
+	inputs.properties resourceProps
+	filesMatching(['META-INF/mods.toml', 'mogged.client.mixins.json', 'mogged-build.properties', 'pack.mcmeta']) {
+		expand resourceProps
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.release = javaVersion
+	options.encoding = 'UTF-8'
+}
+
+tasks.named('jar', Jar) {
+	manifest {
+		// Mixin finds our config through the manifest at runtime
+		attributes['MixinConfigs'] = 'mogged.client.mixins.json'
+		attributes['Implementation-Title'] = 'Mogged'
+		attributes['Implementation-Version'] = project.mod_version
+	}
+	from('LICENSE') {
+		rename { "${it}_mogged" }
+	}
+}
