@@ -66,7 +66,12 @@ repositories {
 
 dependencies {
 	implementation minecraft.dependency("net.minecraftforge:forge:${mc.minecraft_version}-${mc.forge_version}")
-	annotationProcessor "org.spongepowered:mixin:${project.mixin_version}:processor"
+	// The Mixin annotation processor writes the SRG refmap that only obfuscated 1.20.1 needs.
+	// From 1.20.5 Forge runs with Mojang names, so mixins match the names as written and need no refmap
+	// (with the processor on, it fails there: "Unable to locate obfuscation mapping").
+	if (obfuscated) {
+		annotationProcessor "org.spongepowered:mixin:${project.mixin_version}:processor"
+	}
 }
 
 if (obfuscated) {
@@ -74,15 +79,33 @@ if (obfuscated) {
 	renamer.enableMixinRefmaps {
 		config 'mogged.client.mixins.json'
 	}
-	// The plain jar keeps Mojang names for development; the release jar is renamed to the SRG names Forge 47 runs with
+	// The plain jar keeps Mojang names for development (-dev); the renamer makes a copy with the SRG names
+	// Forge 47 runs with (-dev-renamed), and releaseJar repacks that copy under the release name
 	tasks.named('jar', Jar) {
 		archiveClassifier = 'dev'
 	}
-	renamer.classes(tasks.named('jar', Jar)) {
-		archiveClassifier = ''
+	def renameJar = renamer.classes(tasks.named('jar', Jar)) {
 		mappings renamer.mixin.generatedMappings
 	}
 	renamer.mappings(minecraft.dependency.toSrg)
+
+	def releaseName = "${project.archives_base_name}-${project.version}.jar"
+	// The Mixin processor names the refmap after the source set ("main.refmap.json"); the release jar has it
+	// as mogged.refmap.json, so it can't be mistaken for another mod's (mogged.client.mixins.json names it)
+	def releaseJar = tasks.register('releaseJar', Zip) {
+		dependsOn renameJar
+		from {
+			renameJar.get().outputs.files.files.findAll { it.name.endsWith('.jar') }.collect { zipTree(it) }
+		}
+		rename('main\\.refmap\\.json', 'mogged.refmap.json')
+		destinationDirectory = layout.buildDirectory.dir('libs')
+		archiveFileName = releaseName
+		preserveFileTimestamps = false
+		reproducibleFileOrder = true
+	}
+	tasks.named('assemble') {
+		dependsOn releaseJar
+	}
 }
 
 def resourceProps = [
