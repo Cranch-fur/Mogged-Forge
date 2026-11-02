@@ -4,9 +4,8 @@
 
 # Mogged for Forge
 
-A port of [Mogged](../Mogged/README.md) to Minecraft Forge, for the same game versions as the Fabric mod. It does the
-same things: your account skin and two presets, one key (<kbd>K</kbd>) to switch with an animation, HD skins, capes and
-elytra, the skin editor, and other players with the mod see your presets.
+A port of [Mogged](https://github.com/Cranch-fur/Mogged) to Minecraft Forge. It does the
+same things: lets you switch between your own account skin and two custom presets with a single key, with a smooth animated transition. HD skins, capes and elytra, a built-in skin editor, and other players who have the mod see your look too.
 
 The only difference from the Fabric mod: no [Flashback](https://modrinth.com/mod/flashback) support, as that replay mod
 exists for Fabric only.
