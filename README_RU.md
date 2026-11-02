@@ -4,14 +4,14 @@
 
 # Mogged для Forge
 
-Порт [Mogged](https://github.com/Cranch-fur/Mogged) на Minecraft Forge. Возможности те же: переключайтесь между скином своего аккаунта и двумя своими пресетами одной клавишей, с плавной анимацией перехода. HD-скины, плащи и элитры, встроенный редактор скинов — и другие игроки с модом тоже видят ваш образ.
+Порт [Mogged](https://github.com/Cranch-fur/Mogged) на [Minecraft Forge](https://files.minecraftforge.net/net/minecraftforge/forge/). Возможности те же: переключайтесь между скином своего аккаунта и двумя своими пресетами одной клавишей, с плавной анимацией перехода. HD-скины, плащи и элитры, встроенный редактор скинов — и другие игроки с модом тоже видят ваш образ.
 
 Единственное отличие от Fabric-версии: нет поддержки [Flashback](https://modrinth.com/mod/flashback). Этот реплей-мод
 существует только для Fabric.
 
 ## Требования
 
-| Minecraft | Forge | Java |
+| Minecraft | [Forge](https://files.minecraftforge.net/net/minecraftforge/forge/) | Java |
 |---|---|---|
 | 1.20.1 | 47.4+ | 17 |
 | 1.21.1 | 52.1+ | 21 |

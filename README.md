@@ -4,7 +4,7 @@
 
 # Mogged for Forge
 
-A port of [Mogged](https://github.com/Cranch-fur/Mogged) to Minecraft Forge. It does the
+A port of [Mogged](https://github.com/Cranch-fur/Mogged) to [Minecraft Forge](https://files.minecraftforge.net/net/minecraftforge/forge/). It does the
 same things: lets you switch between your own account skin and two custom presets with a single key, with a smooth animated transition. HD skins, capes and elytra, a built-in skin editor, and other players who have the mod see your look too.
 
 The only difference from the Fabric mod: no [Flashback](https://modrinth.com/mod/flashback) support, as that replay mod
@@ -12,7 +12,7 @@ exists for Fabric only.
 
 ## Requirements
 
-| Minecraft | Forge | Java |
+| Minecraft | [Forge](https://files.minecraftforge.net/net/minecraftforge/forge/) | Java |
 |---|---|---|
 | 1.20.1 | 47.4+ | 17 |
 | 1.21.1 | 52.1+ | 21 |
